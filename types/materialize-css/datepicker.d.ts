@@ -152,7 +152,7 @@ declare namespace M {
          * Specify a DOM element to render the calendar in, by default it will be placed before the input
          * @default null
          */
-        container: Element;
+        container: Element | JQuery.Selector;
 
         /**
          * Show the clear button in the datepicker

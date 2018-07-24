@@ -52,9 +52,10 @@ declare namespace M {
         duration: number;
 
         /**
-         * Specify a selector for a DOM element to render the calendar in, by default it will be placed before the input.
+         * Specify a DOM element to render the picker in, by default it will be placed before the input.
+         * @default null
          */
-        container: string;
+        container: Element | JQuery.Selector;
 
         /**
          * Show the clear button in the Timepicker

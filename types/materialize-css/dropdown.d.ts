@@ -81,7 +81,7 @@ declare namespace M {
          * Provide an element that will be the bounding container of the dropdown
          * @default null
          */
-        container: Element;
+        container: Element | JQuery.Selector;
 
         /**
          * If false, the dropdown will show below the trigger
