@@ -38,7 +38,23 @@ export interface KeyPressed {
     readonly virtual: boolean;
 }
 
+export interface Caret {
+    /** caret starting position */
+    start: number,
+    /** caret ending position */
+    end: number,
+    /** the selected text; is an empty string if start & end are the same */
+    text: string,
+    /**
+     * Replace string function.
+     *
+     * The selected text is replaced by the value in the "str" parameter
+     */
+    replaceStr: (str: string) => string
+}
+
 export interface KeyboardData {
+    // ***** Method Variables *****
     // Objects
     /** original keyboard input object. */
     readonly el: Element;
@@ -72,9 +88,11 @@ export interface KeyboardData {
 
     // States
     /**  true when the keyboard is visible; false when hidden. */
-    readonly isVisible: boolean;
+    isVisible (): boolean;
+
     /**  function returns true when the keyboard is the current; Needed to figure out which one has focus when multiple keyboards are open (alwaysOpen: true). */
-    isCurrent(): boolean;
+    isCurrent (): boolean;
+
     /**  true when the shift key is active; false when not active. */
     readonly shiftActive: boolean;
     /**  true when the alt key is active; false when not active. */
@@ -83,21 +101,69 @@ export interface KeyboardData {
     readonly metaActive: boolean;
     /**  true when the caps lock key is active; false when not active. Please note that this particular value is not 100% reliable as it isn't possible to detect the actual state of this key. */
     readonly capsLock: boolean;
+
     /**  true when the keyboard (all keys and preview) are enabled; set to false then call the keyboard.toggle() function to disable the keyboard keys & input. */
-    readonly enabled: boolean;
+    enabled: boolean;
+
+    // ***** Method Functions *****
+
+    /** Opens the keyboard. */
+    reveal (): KeyboardData
+
+    /** Removes previous keyboard & rebuilds it after you change the layout. */
+    redraw (layout?: string): KeyboardData
+
+    /** This function will accept the keyboard contents, then close the keyboard. */
+    accept (): void
+
+    /** This function will reject the keyboard contents, then close the keyboard. */
+    close (): void
+
+    /** This function will insert text into the keyboard at the current caret position. */
+    insertText (text: string): KeyboardData
+
+    /** Returns an object containing information and special functions. */
+    caret (): Caret
+
+    /** TODO */
+    caret (position: 'start' | 'end' | number | {}): KeyboardData
+
+    /** TODO */
+    caret (startPosition: 'start' | 'end' | number | {}, endPosition: number): KeyboardData
+
+    /** This function will check the current keyboard contents for letter combinations and convert them (e.g. ~ + o becomes õ). */
+    checkCombos (): string
+
+    /** This function will check the length of the current keyboard contents and remove any excess. */
+    checkMaxLength (): KeyboardData
+
+    /** The returned value will be a string containing the current keyset. */
+    getKeySet (): string
+
+    /** Shows the given key set */
+    showKeySet (meta: string): KeyboardData
+
+    /** This function will reposition the keyboard. */
+    reposition (): KeyboardData
+
+    /** This function sets the keyboard state to match the keyboard.enabled state */
+    toggle (): KeyboardData
+
+    /** This function completely removes the keyboard and events from the input */
+    destroy (): void
 }
 
 export interface KeyData {
     /** true if key is an action key */
-    readonly isAction: boolean;
+    readonly isAction?: boolean;
     /** key class name suffix ( prefix = 'ui-keyboard-' ); may include decimal ascii value of character */
     readonly name: string;
     /** text inserted (non-action keys) */
-    readonly value: string;
+    readonly value?: string;
     /** title attribute of key */
-    readonly title: string;
+    readonly title?: string;
     /** keyaction name */
-    readonly action: string;
+    readonly action?: string;
     /** HTML of the key; it includes a <span> wrapping a modified data.value */
     readonly html: string;
 
@@ -106,13 +172,13 @@ export interface KeyData {
     readonly $key: JQuery;
 }
 
-export type kbEventHandler             = (event: Event | string, keyboard: KeyboardData, el?: Element) => void;
-export type kbBeforeCloseEventHandler  = (event: Event | string, keyboard: KeyboardData, el?: Element, accepted?: boolean) => void;
-export type kbBeforeInsertEventHandler = (event: Event | string, keyboard: KeyboardData, el?: Element, textToAdd?: string) => boolean | undefined;
+export type kbEventHandler = (event: Event | string, keyboard: KeyboardData, el: Element) => void;
+export type kbBeforeCloseEventHandler = (event: Event | string, keyboard: KeyboardData, el: Element, accepted: boolean) => void;
+export type kbBeforeInsertEventHandler = (event: Event | string, keyboard: KeyboardData, el: Element, textToAdd: string) => string | false;
 
-export type kbBuildKeyHandler          = (keyboard: KeyboardData, data: KeyData) => boolean;
-export type kbSwitchInputHandler       = (keyboard: KeyboardData, goToNext?: boolean, isAccepted?: boolean) => boolean;
-export type kbValidateHandler          = (keyboard: KeyboardData, value: string, isClosing?: boolean) => boolean;
+export type kbBuildKeyHandler = (keyboard: KeyboardData, data: KeyData) => KeyData;
+export type kbSwitchInputHandler = (keyboard: KeyboardData, goToNext: boolean, isAccepted: boolean | 'true') => void;
+export type kbValidateHandler = (keyboard: KeyboardData, value: string, isClosing?: boolean) => boolean;
 
 export interface NavigateOptions {
     focusClass?: string;
@@ -193,10 +259,96 @@ export interface KeyboardOptions {
     validate?: kbValidateHandler;
 }
 
+export interface KeyboardStatic {
+    events: {
+        // keyboard events
+        kbChange: string;
+        kbBeforeClose: string;
+        kbBeforeVisible: string;
+        kbVisible: string;
+        kbInit: string;
+        kbInactive: string;
+        kbHidden: string;
+        kbRepeater: string;
+        kbKeysetChange: string;
+        // input events
+        inputAccepted: string;
+        inputCanceled: string;
+        inputChange: string;
+        inputRestricted: string;
+    };
+    css: {
+        keyText: string;
+        keyPrefix: string;
+    };
+
+    /** Returns an object containing information and special functions. */
+    caret (input: JQuery): Caret;
+
+    /** TODO */
+    caret (input: JQuery, position: 'start' | 'end' | number | {}): KeyboardData;
+
+    /** TODO */
+    caret (input: JQuery, startPosition: 'start' | 'end' | number | {}, endPosition: number): KeyboardData;
+
+    keyaction: {
+        accept: (base: KeyboardData) => void;
+        alt: (base: KeyboardData) => void;
+        bksp: (base: KeyboardData) => void;
+        cancel: (base: KeyboardData) => void;
+        clear: (base: KeyboardData) => void;
+        combo: (base: KeyboardData) => void;
+        dec: (base: KeyboardData) => void;
+        del: (base: KeyboardData) => void;
+        'default': (base: KeyboardData) => void;
+        // TODO - check Types
+        enter: (base: KeyboardData, el: Element, e: KeyboardEvent) => void;
+        // caps lock key
+        lock: (base: KeyboardData) => void;
+        left: (base: KeyboardData) => void;
+        meta: (base: KeyboardData, el: Element) => void;
+        next: (base: KeyboardData) => void;
+        // same as 'default' - resets to base keyset
+        normal: (base: KeyboardData) => void;
+        prev: (base: KeyboardData) => void;
+        right: (base: KeyboardData) => void;
+        shift: (base: KeyboardData) => void;
+        sign: (base: KeyboardData) => void;
+        space: (base: KeyboardData) => void;
+        tab: (base: KeyboardData) => void;
+        toggle: (base: KeyboardData) => void;
+        // *** Special action keys: NBSP & zero-width characters ***
+        // Non-breaking space
+        NBSP: string;
+        // zero width space
+        ZWSP: string;
+        // Zero width non-joiner
+        ZWNJ: string;
+        // Zero width joiner
+        ZWJ: string;
+        // Left-to-right Mark
+        LRM: string;
+        // Right-to-left Mark
+        RLM: string;
+    };
+
+    language: object;
+    layouts: object;
+}
+
+
 declare global {
     interface JQuery {
-        keyboard(options: KeyboardOptions): this;
-        addNavigation(options: NavigateOptions): this;
-        getkeyboard(): KeyboardData
+        keyboard (options: KeyboardOptions): this;
+
+        addNavigation (options: NavigateOptions): this;
+
+        getkeyboard (): KeyboardData;
+
+        data (key: 'keyboard'): KeyboardData;
+    }
+
+    interface JQueryStatic {
+        keyboard: KeyboardStatic
     }
 }
