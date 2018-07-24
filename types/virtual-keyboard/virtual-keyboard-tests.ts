@@ -60,7 +60,21 @@ const kbOptions: KeyboardOptions = {
     updateOnChange: true,
     usePreview: false,
     tabNavigation: false,
-    canceled: () => { console.log("cancelled"); }
+
+    accepted:      (event, keyboard, element) => { console.log("accepted"); },
+    beforeClose:   (event, keyboard, element, accepted) => { console.log("beforeClose"); },
+    beforeInsert:  (event, keyboard, element, txt) => { console.log("beforeInsert"); },
+    beforeVisible: (event, keyboard, element) => { console.log("beforeVisible"); },
+    canceled:      (event, keyboard, element) => { console.log("canceled"); },
+    change:        (event, keyboard, element) => { console.log("change"); },
+    hidden:        (event, keyboard, element) => { console.log("hidden"); },
+    initialized:   (event, keyboard, element) => { console.log("initialized"); },
+    restricted:    (event, keyboard, element) => { console.log("restricted"); },
+    visible:       (event, keyboard, element) => { console.log("visible"); },
+
+    buildKey:      (keyboard, data) => { console.log("buildKey"); },
+    switchInput:   (keyboard, goToNext, isAccepted) => { console.log("switchInput"); },
+    validate:      (keyboard, value, isClosing) => { console.log("validate"); return true; },
 };
 
 const navOptions: NavigateOptions = {
@@ -71,3 +85,6 @@ const navOptions: NavigateOptions = {
   };
 
 jQuery("#keyboard").keyboard(kbOptions).addNavigation(navOptions);
+
+const data = jQuery("#keyboard").getkeyboard();
+const last = data.last;
